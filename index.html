@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="AZ TÚ VIAJE — Próximamente. Agencia de turismo de bienestar nacional e internacional."
+    />
+    <meta name="robots" content="index, follow" />
+    <title>AZ TÚ VIAJE — Próximamente</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Manrope:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="coming-soon.css" />
+  </head>
+  <body>
+    <main class="coming-soon">
+      <div class="coming-soon__bg" aria-hidden="true">
+        <span class="coming-soon__orb coming-soon__orb--1"></span>
+        <span class="coming-soon__orb coming-soon__orb--2"></span>
+        <span class="coming-soon__orb coming-soon__orb--3"></span>
+        <span class="coming-soon__orb coming-soon__orb--4"></span>
+      </div>
+
+      <div class="coming-soon__panel">
+        <img
+          class="coming-soon__logo"
+          src="assets/AZTUVIAJE%20LOGO.png"
+          alt="AZ TÚ VIAJE"
+          width="280"
+          height="72"
+          decoding="async"
+        />
+        <p class="coming-soon__badge">Próximamente</p>
+        <h1 class="coming-soon__title">Estamos construyendo el sitio</h1>
+        <p class="coming-soon__lead">
+          Muy pronto vas a poder conocer nuestras propuestas de turismo de bienestar,
+          nacional e internacional, con la calidez y el asesoramiento que nos define.
+        </p>
+        <p class="coming-soon__status">
+          <span class="coming-soon__pulse" aria-hidden="true"></span>
+          Sitio en desarrollo
+        </p>
+        <p class="coming-soon__contact">
+          Consultas:
+          <a href="mailto:aztuviajeconsultas@gmail.com">aztuviajeconsultas@gmail.com</a>
+        </p>
+      </motion.div>
+
+      <footer class="coming-soon__footer">
+        <p>© <span id="year"></span> AZ TÚ VIAJE · Turismo de bienestar</p>
+      </footer>
+    </main>
+    <script>
+      document.getElementById("year").textContent = String(new Date().getFullYear());
+    </script>
+  </body>
+</html>
