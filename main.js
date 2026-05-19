@@ -38,7 +38,7 @@
 
     window.addEventListener("resize", () => {
       syncHeaderDock();
-      if (window.matchMedia("(min-width: 861px)").matches) {
+      if (window.matchMedia("(min-width: 1025px)").matches) {
         setOpen(false);
       }
     });
@@ -293,6 +293,315 @@
     requestAnimationFrame(draw);
   };
 
+  /** Tarjeta de contacto: baja con el scroll hasta el final de la sección (desktop). */
+  const initContactCardScrollFollow = () => {
+    const section = document.getElementById("contacto");
+    const inner = section?.querySelector(".section__inner--contact");
+    const card = section?.querySelector("[data-contact-card]");
+    const head = section?.querySelector(".contact__head");
+    const formCol = section?.querySelector(".contact__form-col");
+    const mq = window.matchMedia("(min-width: 880px)");
+
+    if (!section || !inner || !card || !head || !formCol) return;
+
+    let maxOffset = 0;
+    let raf = 0;
+
+    const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
+
+    const measure = () => {
+      if (!mq.matches) {
+        maxOffset = 0;
+        card.style.transform = "";
+        return;
+      }
+
+      const innerRect = inner.getBoundingClientRect();
+      const headRect = head.getBoundingClientRect();
+      const formRect = formCol.getBoundingClientRect();
+      const cardH = card.offsetHeight;
+      const startY = headRect.top - innerRect.top;
+      const endY = formRect.bottom - innerRect.top - cardH;
+
+      maxOffset = Math.max(0, endY - startY);
+    };
+
+    const update = () => {
+      raf = 0;
+
+      if (!mq.matches || reduceMotion) {
+        card.style.transform = "";
+        return;
+      }
+
+      const innerStyles = getComputedStyle(inner);
+      const stickyTop =
+        parseFloat(innerStyles.getPropertyValue("--contact-sticky-top")) || 80;
+      const rect = section.getBoundingClientRect();
+      const vh = window.innerHeight;
+      const start = rect.top - stickyTop;
+      const end = rect.bottom - vh * 0.88;
+      const range = end - start;
+      const progress = range > 0 ? clamp(-start / range, 0, 1) : 0;
+
+      card.style.transform = `translate3d(0, ${progress * maxOffset}px, 0)`;
+    };
+
+    const schedule = () => {
+      if (!raf) raf = requestAnimationFrame(update);
+    };
+
+    measure();
+    update();
+
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", () => {
+      measure();
+      schedule();
+    });
+
+    mq.addEventListener("change", () => {
+      measure();
+      schedule();
+    });
+
+    const ro = new ResizeObserver(() => {
+      measure();
+      schedule();
+    });
+    ro.observe(section);
+    ro.observe(card);
+    ro.observe(formCol);
+  };
+
+  /** Puntos violetas flotantes en la tarjeta Contacto directo. */
+  const initContactCardDotsCanvas = () => {
+    const card = document.querySelector("[data-contact-card]");
+    const canvas = card?.querySelector(".contact-card__dots-canvas");
+    if (!card || !canvas || !(canvas instanceof HTMLCanvasElement)) return;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    let w = 0;
+    let h = 0;
+    let dpr = 1;
+
+    const purples = [
+      [155, 114, 203],
+      [118, 72, 178],
+      [138, 88, 205],
+      [95, 55, 155],
+    ];
+
+    const dots = Array.from({ length: 32 }, () => ({
+      nx: Math.random(),
+      ny: Math.random(),
+      r: 2.2 + Math.random() * 4.8,
+      alpha: 0.22 + Math.random() * 0.38,
+      ph: Math.random() * Math.PI * 2,
+      sp: 0.35 + Math.random() * 0.65,
+      pi: Math.floor(Math.random() * purples.length),
+      drift: 0.004 + Math.random() * 0.01,
+    }));
+
+    const resize = () => {
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      w = card.clientWidth;
+      h = card.clientHeight;
+      if (w < 1 || h < 1) return;
+      canvas.width = Math.floor(w * dpr);
+      canvas.height = Math.floor(h * dpr);
+      canvas.style.width = `${w}px`;
+      canvas.style.height = `${h}px`;
+    };
+
+    const draw = (now) => {
+      const t = now * 0.001;
+      if (w < 2 || h < 2) {
+        requestAnimationFrame(draw);
+        return;
+      }
+
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, w, h);
+
+      for (const d of dots) {
+        const [pr, pg, pb] = purples[d.pi];
+        const pulse = 0.82 + Math.sin(t * d.sp * 2.2 + d.ph) * 0.18;
+        let x =
+          (d.nx +
+            Math.sin(t * d.sp + d.ph) * 0.09 +
+            Math.cos(t * d.sp * 0.7 + d.ph * 1.4) * 0.04 +
+            t * d.drift) %
+          1;
+        let y =
+          (d.ny +
+            Math.cos(t * d.sp * 0.9 + d.ph * 1.1) * 0.09 +
+            Math.sin(t * d.sp * 0.55 + d.ph) * 0.04 +
+            t * d.drift * 0.85) %
+          1;
+        if (x < 0) x += 1;
+        if (y < 0) y += 1;
+
+        ctx.beginPath();
+        ctx.arc(x * w, y * h, d.r * pulse, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(${pr},${pg},${pb},${d.alpha})`;
+        ctx.fill();
+      }
+
+      requestAnimationFrame(draw);
+    };
+
+    const ro = new ResizeObserver(resize);
+    ro.observe(card);
+    resize();
+    requestAnimationFrame(draw);
+  };
+
+  /**
+   * Fondo animado Experiencias: olas en capas con desplazamiento continuo (canvas).
+   * Inspirado en wave / ocean backgrounds (freefrontend). Distinto al mesh del hero.
+   */
+  const initShowcaseBubblesCanvas = () => {
+    const section = document.querySelector("[data-showcase-section]");
+    const canvas = section?.querySelector(".showcase-bubbles-canvas");
+    if (!section || !canvas || !(canvas instanceof HTMLCanvasElement)) return;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    let w = 0;
+    let h = 0;
+    let dpr = 1;
+    let running = true;
+    let mx = 0.5;
+    let px = 0.5;
+
+    const purple = [155, 114, 203];
+    const teal = [120, 195, 185];
+
+    const waveLayers = [
+      { base: 0.52, amp: 0.11, freq: 0.0052, speed: 1.15, phase: 0, col: teal, fill: 0.1, stroke: 0.32, lw: 2 },
+      { base: 0.62, amp: 0.09, freq: 0.0068, speed: -0.95, phase: 1.4, col: purple, fill: 0.09, stroke: 0.28, lw: 1.8 },
+      { base: 0.72, amp: 0.075, freq: 0.0082, speed: 1.35, phase: 2.1, col: teal, fill: 0.11, stroke: 0.26, lw: 1.6 },
+      { base: 0.82, amp: 0.06, freq: 0.0095, speed: -1.2, phase: 0.6, col: purple, fill: 0.12, stroke: 0.24, lw: 1.5 },
+      { base: 0.9, amp: 0.045, freq: 0.011, speed: 1.55, phase: 3.2, col: teal, fill: 0.14, stroke: 0.22, lw: 1.35 },
+    ];
+
+    const waveY = (x, layer, sec, sway) => {
+      const t = sec * layer.speed + layer.phase + sway;
+      const baseY = h * layer.base;
+      const ampPx = h * layer.amp;
+      return (
+        baseY +
+        Math.sin(x * layer.freq + t) * ampPx +
+        Math.sin(x * layer.freq * 2.15 + t * 1.25) * ampPx * 0.32 +
+        Math.sin(x * layer.freq * 0.48 + t * 0.7) * ampPx * 0.18
+      );
+    };
+
+    const traceWave = (layer, sec, sway, startX, endX, step) => {
+      let first = true;
+      for (let x = startX; x <= endX; x += step) {
+        const y = waveY(x, layer, sec, sway);
+        if (first) {
+          ctx.moveTo(x, y);
+          first = false;
+        } else {
+          ctx.lineTo(x, y);
+        }
+      }
+    };
+
+    const resize = () => {
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      w = section.clientWidth;
+      h = section.clientHeight;
+      if (w < 1 || h < 1) return;
+      canvas.width = Math.floor(w * dpr);
+      canvas.height = Math.floor(h * dpr);
+      canvas.style.width = `${w}px`;
+      canvas.style.height = `${h}px`;
+    };
+
+    const drawWaves = (sec) => {
+      const sway = (px - 0.5) * 0.35;
+      const step = Math.max(3, w / 140);
+
+      for (const layer of waveLayers) {
+        const [r, g, b] = layer.col;
+        ctx.beginPath();
+        traceWave(layer, sec, sway, -12, w + 12, step);
+        ctx.lineTo(w + 24, h + 32);
+        ctx.lineTo(-24, h + 32);
+        ctx.closePath();
+        ctx.fillStyle = `rgba(${r},${g},${b},${layer.fill})`;
+        ctx.fill();
+      }
+
+      ctx.lineJoin = "round";
+      ctx.lineCap = "round";
+      for (const layer of waveLayers) {
+        const [r, g, b] = layer.col;
+        ctx.beginPath();
+        traceWave(layer, sec, sway, -12, w + 12, step);
+        ctx.strokeStyle = `rgba(${r},${g},${b},${layer.stroke})`;
+        ctx.lineWidth = layer.lw;
+        ctx.stroke();
+      }
+    };
+
+    const draw = (now) => {
+      if (!running) return;
+
+      const sec = now * 0.001;
+      px += (mx - px) * 0.04;
+
+      if (w < 2 || h < 2) {
+        requestAnimationFrame(draw);
+        return;
+      }
+
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, w, h);
+
+      const bg = ctx.createLinearGradient(0, 0, 0, h);
+      bg.addColorStop(0, "rgba(246, 244, 251, 0.92)");
+      bg.addColorStop(0.45, "rgba(246, 244, 251, 0.55)");
+      bg.addColorStop(1, "rgba(228, 244, 240, 0.75)");
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, w, h);
+
+      drawWaves(sec);
+
+      requestAnimationFrame(draw);
+    };
+
+    const onPtr = (e) => {
+      const r = section.getBoundingClientRect();
+      mx = (e.clientX - r.left) / r.width;
+    };
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        running = entries[0]?.isIntersecting ?? true;
+        if (running) requestAnimationFrame(draw);
+      },
+      { threshold: 0.05 }
+    );
+    io.observe(section);
+
+    const ro = new ResizeObserver(resize);
+    ro.observe(section);
+    resize();
+    section.addEventListener("pointermove", onPtr, { passive: true });
+    section.addEventListener("pointerleave", () => {
+      mx = 0.5;
+    });
+    requestAnimationFrame(draw);
+  };
+
   const initHeroParallax = () => {
     const root = document.querySelector("[data-hero-parallax]");
     if (!root) return;
@@ -412,11 +721,195 @@
     });
   };
 
+  const initWhatsappWidget = () => {
+    const root = document.querySelector("[data-wpp-widget]");
+    if (!root) return;
+
+    const openBtn = root.querySelector("[data-wpp-open]");
+    const closeBtn = root.querySelector("[data-wpp-close]");
+    const backdrop = root.querySelector("[data-wpp-backdrop]");
+    const panel = document.getElementById("wpp-panel");
+    if (!openBtn || !panel || !backdrop) return;
+
+    let lastFocus = null;
+
+    const setOpen = (open) => {
+      root.classList.toggle("is-open", open);
+      openBtn.setAttribute("aria-expanded", open ? "true" : "false");
+      panel.hidden = !open;
+      backdrop.hidden = !open;
+      document.body.style.overflow = open ? "hidden" : "";
+
+      if (open) {
+        lastFocus = document.activeElement;
+        const first = panel.querySelector("a, button");
+        if (first instanceof HTMLElement) first.focus();
+      } else if (lastFocus instanceof HTMLElement) {
+        lastFocus.focus();
+        lastFocus = null;
+      }
+    };
+
+    openBtn.addEventListener("click", () => {
+      const isOpen = root.classList.contains("is-open");
+      setOpen(!isOpen);
+    });
+
+    closeBtn?.addEventListener("click", () => setOpen(false));
+    backdrop.addEventListener("click", () => setOpen(false));
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && root.classList.contains("is-open")) {
+        setOpen(false);
+      }
+    });
+  };
+
+  const initShowcaseCarousel = () => {
+    const root = document.querySelector("[data-showcase-carousel]");
+    if (!root) return;
+
+    const slides = [...root.querySelectorAll("[data-showcase-slide]")];
+    const dotsWrap = root.querySelector("[data-showcase-dots]");
+    const prevBtn = root.querySelector("[data-showcase-prev]");
+    const nextBtn = root.querySelector("[data-showcase-next]");
+    const status = root.querySelector("[data-showcase-status]");
+    const counter = root.querySelector("[data-showcase-counter]");
+    if (!slides.length || !dotsWrap) return;
+
+    let index = slides.findIndex((s) => s.classList.contains("is-active"));
+    if (index < 0) index = 0;
+
+    let timer = null;
+    const intervalMs = reduceMotion ? 0 : 6500;
+
+    const regionLabels = {
+      nacional: "Viajes Nacionales",
+      norteamerica: "Norteamérica",
+      europa: "Europa",
+      caribe: "Caribe",
+    };
+
+    const getRegionName = (slide) => {
+      const region = slide?.getAttribute("data-showcase-region");
+      return region ? regionLabels[region] : "";
+    };
+
+    const announce = (i) => {
+      const slide = slides[i];
+      const regionName = getRegionName(slide);
+      const destinos = slide
+        ? [...slide.querySelectorAll(".dest-card__title")]
+            .map((el) => el.textContent?.trim())
+            .filter(Boolean)
+        : [];
+
+      if (counter) {
+        counter.textContent = `${i + 1} / ${slides.length}`;
+      }
+      if (!status) return;
+      if (regionName && destinos.length) {
+        status.textContent = `${regionName}: ${destinos.join(", ")}. Región ${i + 1} de ${slides.length}`;
+      } else if (regionName) {
+        status.textContent = `${regionName}. Región ${i + 1} de ${slides.length}`;
+      } else {
+        status.textContent = `Región ${i + 1} de ${slides.length}`;
+      }
+    };
+
+    const renderDots = () => {
+      dotsWrap.innerHTML = "";
+      slides.forEach((slide, i) => {
+        const dot = document.createElement("button");
+        dot.type = "button";
+        dot.className = `showcase-carousel__dot${i === index ? " is-active" : ""}`;
+        dot.setAttribute("role", "tab");
+        dot.setAttribute("aria-selected", i === index ? "true" : "false");
+        const regionName = getRegionName(slide);
+        dot.setAttribute(
+          "aria-label",
+          regionName ? `Ir a ${regionName}` : `Ir a región ${i + 1}`,
+        );
+        dot.addEventListener("click", () => goTo(i));
+        dotsWrap.appendChild(dot);
+      });
+    };
+
+    const goTo = (nextIndex) => {
+      index = (nextIndex + slides.length) % slides.length;
+      slides.forEach((slide, i) => {
+        const active = i === index;
+        slide.classList.toggle("is-active", active);
+        slide.setAttribute("aria-hidden", active ? "false" : "true");
+      });
+      dotsWrap.querySelectorAll(".showcase-carousel__dot").forEach((dot, i) => {
+        dot.classList.toggle("is-active", i === index);
+        dot.setAttribute("aria-selected", i === index ? "true" : "false");
+      });
+      announce(index);
+    };
+
+    const next = () => goTo(index + 1);
+    const prev = () => goTo(index - 1);
+
+    const stopAuto = () => {
+      if (timer) {
+        window.clearInterval(timer);
+        timer = null;
+      }
+    };
+
+    const startAuto = () => {
+      stopAuto();
+      if (intervalMs > 0) {
+        timer = window.setInterval(next, intervalMs);
+      }
+    };
+
+    prevBtn?.addEventListener("click", () => {
+      prev();
+      startAuto();
+    });
+    nextBtn?.addEventListener("click", () => {
+      next();
+      startAuto();
+    });
+
+    root.addEventListener("mouseenter", stopAuto);
+    root.addEventListener("mouseleave", startAuto);
+    root.addEventListener("focusin", stopAuto);
+    root.addEventListener("focusout", (e) => {
+      if (!root.contains(e.relatedTarget)) startAuto();
+    });
+
+    root.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowRight") {
+        e.preventDefault();
+        next();
+        startAuto();
+      } else if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        prev();
+        startAuto();
+      }
+    });
+
+    renderDots();
+    goTo(index);
+    startAuto();
+  };
+
   initScrollReveal();
+  initWhatsappWidget();
+  initShowcaseCarousel();
   initHeroEntrance();
+
+  initContactCardScrollFollow();
 
   if (!reduceMotion) {
     initHeroMeshCanvas();
+    initContactCardDotsCanvas();
+    initShowcaseBubblesCanvas();
     initHeroParallax();
     initMagnetic();
     initTiltCards();

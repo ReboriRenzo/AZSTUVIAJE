@@ -1,0 +1,42 @@
+          <div
+            class="showcase-carousel js-reveal"
+            data-showcase-carousel
+            aria-roledescription="carrusel"
+            aria-label="Experiencias por región"
+          >
+            <div class="showcase-carousel__viewport">
+              <div class="showcase-carousel__track" data-showcase-track>
+                <div class="showcase-panel is-active" data-showcase-slide data-showcase-region="nacional" aria-hidden="false">
+                  <header class="showcase-panel__head">
+                    <p class="showcase-panel__tag showcase-panel__tag--nacional">Viajes Nacionales</p>
+                  </header>
+                  <div class="showcase-panel__grid">
+                    <article class="showcase-card">
+                      <div class="showcase-card__media showcase-card__media--nacional" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none"><path d="M12 3c2.5 3.2 4 6.4 4 9.5a4 4 0 11-8 0c0-3.1 1.5-6.3 4-9.5z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8.5 18.5h7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+                      </div>
+                      <div class="showcase-card__body">
+                        <h3 class="showcase-card__title">Termas y spa en el interior</h3>
+                        <p class="showcase-card__text">Circuitos por Córdoba y Entre Ríos con aguas termales, alojamiento con encanto y ritmo pensado para desconectar.</p>
+                      </div>
+                    </article>
+                    <article class="showcase-card">
+                      <div class="showcase-card__media showcase-card__media--nacional-2" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none"><path d="M4 14l8-8 8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 14v5h10v-5" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+                      </div>
+                      <div class="showcase-card__body">
+                        <h3 class="showcase-card__title">Patagonia y cordillera</h3>
+                        <p class="showcase-card__text">Naturaleza austera, caminatas suaves y lodges con foco en descanso profundo en el sur del país.</p>
+                      </div>
+                    </article>
+                    <article class="showcase-card">
+                      <div class="showcase-card__media showcase-card__media--photo">
+                        <img src="assets/Checklist.jpg" alt="" width="1200" height="800" loading="lazy" decoding="async" />
+                      </div>
+                      <div class="showcase-card__body">
+                        <h3 class="showcase-card__title">Litoral y bienestar costero</h3>
+                        <p class="showcase-card__text">Playas tranquilas, spa y gastronomía regional: armamos tu escapada nacional con logística clara de punta a punta.</p>
+                      </div>
+                    </article>
+                  </div>
+                </div>
