@@ -46,10 +46,44 @@
     window.addEventListener("resize", syncHeaderDock);
   }
 
+  const WPP_PHONES = {
+    zulema: "5493572612959",
+    analia: "5493571355381",
+  };
+
   const form = document.querySelector(".lead-form");
   if (form) {
     form.addEventListener("submit", (e) => {
       e.preventDefault();
+
+      const data = new FormData(form);
+      const value = (name) => String(data.get(name) || "").trim();
+      const tipo = form.querySelector('[name="tipo"]');
+      const tipoLabel =
+        tipo instanceof HTMLSelectElement && tipo.selectedOptions[0] && tipo.value
+          ? tipo.selectedOptions[0].textContent.trim()
+          : "";
+
+      const lines = ["Hola, quiero consultar un viaje con AZ TÚ VIAJE.", "", `Nombre: ${value("nombre")}`];
+      const optional = [
+        ["Destino", value("destino")],
+        ["Fecha aproximada", value("fecha")],
+        ["Pasajeros", value("pasajeros")],
+        ["Tipo de viaje", tipoLabel],
+      ];
+      optional.forEach(([label, text]) => {
+        if (text) lines.push(`${label}: ${text}`);
+      });
+      const notas = value("observaciones");
+      if (notas) {
+        lines.push("", `Observaciones: ${notas}`);
+      }
+
+      const phone = WPP_PHONES[value("asesor")] || WPP_PHONES.zulema;
+      const url = `https://wa.me/${phone}?text=${encodeURIComponent(lines.join("\n"))}`;
+      const popup = window.open(url, "_blank");
+      if (popup) popup.opener = null;
+      else window.location.assign(url);
     });
   }
 

@@ -673,9 +673,19 @@
                   ></textarea>
                 </label>
 
+                <label class="field field--full field--select">
+                  <span class="field__label">Enviar consulta a</span>
+                  <select class="field__input field__input--select" name="asesor" required>
+                    <option value="" selected disabled>Seleccionar</option>
+                    <option value="zulema">Zulema · Río Segundo</option>
+                    <option value="analia">Analía · Río Tercero</option>
+                  </select>
+                </label>
+
                 <button class="btn btn--primary btn--lg lead-form__submit js-magnetic js-ripple" type="submit">
-                  Enviar consulta
+                  Enviar por WhatsApp
                 </button>
+                <p class="lead-form__hint">Se abre WhatsApp con los datos que completaste.</p>
               </form>
             </div>
 
